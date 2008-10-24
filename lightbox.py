@@ -1,27 +1,30 @@
 #!/usr/bin/python2.5
 
 import os
-#import time
 from math import *
 from random import *
 from libavg import avg, anim, draggable
 
 global Player
 imageList=[]
+imgScale=2
 
 def populateLightbox(): 
     path="./images"
     dirList=os.listdir(path)
     for fname in dirList:
-        print "adding ",fname
         newImage=Player.createNode("image", {"href":path+"/"+fname})
+        origwidth=newImage.width
+        origheight=newImage.height
         Player.getElementByID("lightbox").appendChild(newImage)
         root=Player.getRootNode()
-        newImage.x=randint(0,root.width/2)
-        newImage.y=randint(0,root.height/2)
-        newImage.width /= 4
-        newImage.height /= 4
-        newImage.angle=radians(330)+uniform(0,radians(60))
+        newImage.width /= imgScale
+        newImage.height /= imgScale
+##-        newImage.opacity = 0.8
+        print "adding ",fname," - ",origwidth,"x",origheight," scaled down to ",newImage.width,"x",newImage.height
+        newImage.x=uniform(0,root.width-newImage.width)
+        newImage.y=uniform(0,root.height-newImage.height)
+        newImage.angle=radians(340)+uniform(0,radians(40))
         imgDragger=draggable.Draggable(newImage)
         imgDragger.enable()
         imageList.append(imgDragger)
