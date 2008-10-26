@@ -41,11 +41,10 @@ class dragState():
           print "calculating drag vector for ",event.node
           self.dragX.append(event.node.x)
           self.dragY.append(event.node.y)
-          if len(self.dragX)==10&len(self.dragY)==10:
-            self.movX=self.dragX[9]-self.dragX[0]
-            print "X ",self.movX
-            self.movY=self.dragY[9]-self.dragY[0]
-            print "Y ",self.movY
+          self.movX=self.dragX[9]-self.dragX[0]
+          print "X ",self.movX
+          self.movY=self.dragY[9]-self.dragY[0]
+          print "Y ",self.movY
 
       def nullifyDragVector(self, event):
           print "nullifying drag vectors for "
