@@ -2,6 +2,7 @@
 
 import os
 import time
+import re
 from math import *
 from random import *
 from libavg import avg, anim, draggable
@@ -10,7 +11,7 @@ from collections import deque
 global Player
 draggablesList=[]
 imageList=[]
-imgScale=2
+imgScale=3
 
 class fifo(deque):
     def __init__(self, capacity):
@@ -23,14 +24,17 @@ class fifo(deque):
              self.popleft()
          deque.append(self, x)
 
-def animContDragMotion(imgid, movX, movY):
+def animContDragMotion(imgid, movX, movY, duration):
         img = Player.getElementByID(imgid)
         print "animating ",imgid,"/",img," ",movX," ",movY
-        animX = anim.SplineAnim(img, "x", 2000 , img.x, movX/5, img.x+movX, movX/1, useInt=True)
-        animY = anim.SplineAnim(img, "y", 2000 , img.y, movY/5, img.y+movY, movY/1, useInt=True)
+        animX = anim.SplineAnim(img, "x", duration , img.x, movX/2, img.x+movX, movX/10, useInt=True)
+        animY = anim.SplineAnim(img, "y", duration , img.y, movY/2, img.y+movY, movY/10, useInt=True)
 
-#        animX = anim.LinearAnim(img, "x", 3000 , img.x, img.x+movX)
-#        animY = anim.LinearAnim(img, "y", 3000 , img.y, img.y+movY)
+def animBlowUp(imgid, scale, duration):
+        img = Player.getElementByID(imgid)
+        print "blowing ",imgid,"/",img," up to ",img.width/scale,"x",img.height/scale
+        animX = anim.SplineAnim(img, "width", duration , img.width/scale/10, scale, img.width/scale, scale/10, useInt=False)
+        animY = anim.SplineAnim(img, "height", duration , img.height/scale/10, scale, img.height/scale, scale/10, useInt=False)
 
 class dragState():
       def __init__(self, dragX, dragY):
@@ -68,25 +72,25 @@ class dragState():
           
 #          animContDragMotion(event.node.id, self.movX, self.movY)
           
+isImg=re.compile('.*jpg|.*png')
+
 def populateLightbox(): 
     path="./images"
     dirList=os.listdir(path)
     for fname in dirList:
+      if isImg.match(fname):
         newImage=Player.createNode("image", {"href":path+"/"+fname, "id":fname})
         print newImage
         origwidth=newImage.width
         origheight=newImage.height
         Player.getElementByID("lightbox").appendChild(newImage)
         root=Player.getRootNode()
-        newImage.width /= imgScale
-        newImage.height /= imgScale
-##-        newImage.opacity = 0.8
-        print "adding ",fname," - ",origwidth,"x",origheight," scaled down to ",int(newImage.width),"x",int(newImage.height)
-        newImage.x=uniform(0,root.width-newImage.width)
-        newImage.y=uniform(0,root.height-newImage.height)
-        newImage.angle=radians(340)+uniform(0,radians(40))
+        print "adding ",fname," - ",origwidth,"x",origheight," scaled down to ",int(newImage.width/imgScale),"x",int(newImage.height/imgScale)
+        animContDragMotion(newImage.id, uniform(0,root.width-newImage.width/imgScale), uniform(0,root.height-newImage.height/imgScale), 500)
+        animBlowUp(newImage.id, imgScale, 500)
 #        newImage.x=400
 #        newImage.y=300
+        newImage.angle=radians(340)+uniform(0,radians(40))
         imageList.append(newImage)
         a=dragState(fifo(10), fifo(10))
         imgDragger=draggable.Draggable(newImage, onDragStart=a.nullifyDragVector, onDragMove=a.calcDragVector, onDragEnd=a.continueDragMotion)
