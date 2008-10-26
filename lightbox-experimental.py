@@ -10,37 +10,38 @@ from collections import deque
 global Player
 draggablesList=[]
 imageList=[]
-imgScale=3
+imgScale=2
 
 class fifo(deque):
-     def __init__(self, capacity):
+    def __init__(self, capacity):
          deque.__init__(self)
          assert capacity > 0
          self.capacity = capacity
 
-     def append(self, x):
+    def append(self, x):
          while len(self) >= self.capacity:
              self.popleft()
          deque.append(self, x)
 
+def animContDragMotion(imgid, movX, movY):
+        img = Player.getElementByID(imgid)
+        print "animating ",imgid,"/",img," ",movX," ",movY
+        anim.SplineAnim(img, img.x, 2000 , img.x, movX/10, img.x+movX, 0)
+
 class dragState():
-      def __init__(self, dragX, dragY, node):
+      def __init__(self, dragX, dragY):
         self.dragX=dragX
         self.dragY=dragY
-        self.node=node
 
       def calcDragVector(self, event):
           print "calculating drag vector for ",event.node
           self.dragX.append(event.node.x)
           self.dragY.append(event.node.y)
-#          print list(self.dragX)
-#          print list(self.dragY)
-          print self.node," ",event.node
           if len(self.dragX)==10&len(self.dragY)==10:
-            movX=self.dragX[9]-self.dragX[0]
-            print "X ",movX
-            movY=self.dragY[9]-self.dragY[0]
-            print "Y ",movY
+            self.movX=self.dragX[9]-self.dragX[0]
+            print "X ",self.movX
+            self.movY=self.dragY[9]-self.dragY[0]
+            print "Y ",self.movY
 
       def nullifyDragVector(self, event):
           print "nullifying drag vectors for "
@@ -49,36 +50,18 @@ class dragState():
           for y in list(self.dragY):
             self.dragY.append(event.node.y)
           print list(self.dragX)," ",list(self.dragY)
-
-      def storeDragMotion(self, event):
-          print "storing movX and movY of ",self.node
-          self.node.movX= self.movX
-          self.node.movY= self.movY
-
-      def retrDragMotion(self, event):
-          print "retrDragMotion"
-          print self.node.movX
-
+          
       def continueDragMotion(self, event):
           print "continuing drag motion of ",event," ",event.node
-          print list(self.dragX)," ",list(self.dragY)
+          print event.node.id," ",list(self.dragX)," ",list(self.dragY)
+          print event.node.id," ",self.movX," ",self.movY
+          animContDragMotion(event.node.id, self.movX, self.movY)
           
-      def decelerateDragMotion(self):
-          print "foo ",self.movX," bar ",self.node
-          
-
-#def retrDragHist(node):
-#        print list(dragX)
-#        print list(dragY)
-
-def printDrags(node):
-    print 
-                
 def populateLightbox(): 
     path="./images"
     dirList=os.listdir(path)
     for fname in dirList:
-        newImage=Player.createNode("image", {"href":path+"/"+fname})
+        newImage=Player.createNode("image", {"href":path+"/"+fname, "id":fname})
         print newImage
         origwidth=newImage.width
         origheight=newImage.height
@@ -94,23 +77,21 @@ def populateLightbox():
         newImage.x=100
         newImage.y=550
         imageList.append(newImage)
-        a=dragState(fifo(10), fifo(10), newImage)
+        a=dragState(fifo(10), fifo(10))
         imgDragger=draggable.Draggable(newImage, onDragStart=a.nullifyDragVector, onDragMove=a.calcDragVector, onDragEnd=a.continueDragMotion)
         imgDragger.enable()
         draggablesList.append(imgDragger)
 
 
 def onFrame():
-        Bitmap = Tracker.getImage(avg.IMG_FINGERS)
-        Node = Player.getElementByID("TrackerBitmap")
-        Node.setBitmap(Bitmap)
-        Node.width=1280
-        Node.height=720
-        Node.angle=pi
-##-        for img in imageList:
-##-          d=dragState(0,0,img)
-##-          d.retrDragMotion 
-          
+        #Bitmap = Tracker.getImage(avg.IMG_FINGERS)
+        #Node = Player.getElementByID("TrackerBitmap")
+        #Node.setBitmap(Bitmap)
+        #Node.width=1280
+        #Node.height=720
+        #Node.angle=pi
+        pass
+
 Player = avg.Player()
 ##- Player.loadFile('lightbox.avg')
 Player.loadString('''
@@ -119,11 +100,13 @@ Player.loadString('''
 </div>
 <image id="TrackerBitmap" sensitive="False"/>
 </avg>''')
-Player.setResolution(1,0,0,0)
+Player.setResolution(0,1280,720,0)
 Player.setVBlankFramerate(1)
 Player.setOnFrameHandler(onFrame)
-Tracker=Player.addTracker("trackerrc")
-Tracker.setDebugImages(True,True)
+#Tracker=Player.addTracker("trackerrc")
+#Tracker.setDebugImages(True,True)
 anim.init(Player)
 populateLightbox()
+for img in imageList:
+    animContDragMotion(img.id, uniform(-150,150), uniform(-150,150))
 Player.play()
