@@ -56,19 +56,32 @@ class dragState():
 
 
       def nullifyDragVector(self, event):
+          image=event.node
+          print float(image.angle)
+          if float(image.angle) == 0.0:
+            root=Player.getRootNode()
+            print "fullsize image detected"
+            endwidth=image.width/imgScale
+            endheight=image.height/imgScale
+            print endwidth," ",endheight," ",root.width," ",root.height
+            anim.SplineAnim(image, "width", 500, image.width, 0, endwidth, 0)
+            anim.SplineAnim(image, "height", 500, image.height, 0, endheight, 0)
+            anim.SplineAnim(image, "angle", 500, image.angle, 0, radians(340)+uniform(0,radians(40)), 0)
+            anim.SplineAnim(image, "x", 500, image.x, 0, (root.width-endwidth)/2, 0)
+            anim.SplineAnim(image, "y", 500, image.y, 0, (root.height-endheight-(endheight/2)), 0)
           print "nullifying drag vectors for ",event.node.id
-          for null in [0,0,0,0,0,0,0,0,0,0]:
+          for null in [0,0,0,0,0,0,0,0,0,0]:  	# fill fifo if it's empty
             self.dragX.append(null)
             self.dragY.append(null)
-          for x in list(self.dragX):
+          for x in list(self.dragX):		# fill fifo with current position
             self.dragX.append(event.node.x)
-          for y in list(self.dragY):
+          for y in list(self.dragY):		# see last comment ;)
             self.dragY.append(event.node.y)
           print list(self.dragX)," ",list(self.dragY)
           self.movX=0
           self.movY=0
 
-          
+            
       def continueDragMotion(self, event):
           print "continuing drag motion of ",event.node.id
           print event.node.id," ",self.movX," ",self.movY
@@ -77,26 +90,62 @@ class dragState():
           animY = anim.SplineAnim(img, "y", 500 , img.y, 5*self.movY, img.y+(2*self.movY), 0, useInt=True)
 
 
-
 isImg=re.compile('.*jpg|.*png')
 
 def deleteObject(image):
     print "deleting object ",image.id," at ", image.x,",",image.y
     Lightbox=Player.getElementByID("LightBox")
     Lightbox.removeChild(image)
-    
-    
-def removeOutsiders():
+    imageList.remove(image)
+
+
+def addObjectToPublishStack(image):
     root=Player.getRootNode()
-    print "checking for objects outside of display area"
+    Lightbox=Player.getElementByID("LightBox")
+    PublishStack=Player.getElementByID("PublishStack")    
+    Parent=image.getParent()
+    if Parent == Lightbox:
+      image.unlink()
+      PublishStack.appendChild(image)
+      imgIndex=PublishStack.indexOf(image)
+      print image.id," added to pubstack as ", imgIndex
+    elif Parent == PublishStack:
+      imgIndex=PublishStack.indexOf(image)
+      print image.id," is member of pubstack ", imgIndex
+    anim.SplineAnim(image, "x", 500 , image.x, root.width/10, root.width-image.width+image.width/7, 0, useInt=True)
+    anim.SplineAnim(image, "y", 500, image.y, root.width/10, 40+imgIndex*20, 0, useInt=True)
+    anim.SplineAnim(image, "angle", 500, image.angle, 0, radians(340), 0, useInt=False)
+        
+
+def makeFullSize(image):
+    root=Player.getRootNode()
+    anim.SplineAnim(image, "x", 500, image.x, 0, (root.width-image.width*imgScale)/2, 0)
+    anim.SplineAnim(image, "y", 500, image.y, 0, (root.height-image.height*imgScale)/2, 0)
+    anim.SplineAnim(image, "angle", 500, image.angle, 0, 0, 0)
+    anim.SplineAnim(image, "width", 500, image.width, 0, image.width*imgScale, 0)
+    anim.SplineAnim(image, "height", 500, image.height, 0, image.height*imgScale, 0)
+    
+
+def scaleDown(image):
+    root=Player.getRootNode()
+    animSlideIntoPosition(image.id, uniform(0,200), uniform(0,root.height-image.height/imgScale), 500)
+    animBlowUp(image.id, imgScale, 500)
+    image.angle=radians(340)+uniform(0,radians(40))
+                
+
+def handleOutsiders():
+#      print "deciding what to do with ",image
+    root=Player.getRootNode()
+#    print "checking for objects outside of display area"
     for image in imageList:
-      if int(image.x)>root.width:
+      if int(image.x)>root.width-(image.width/2):
+        addObjectToPublishStack(image)
+      elif int(image.x)<0-int(image.width)+int(image.width/6):
+#        scaleDown(image)
         deleteObject(image)
-      if int(image.x)<0-int(image.width):
-        deleteObject(image)
-      if int(image.y)>root.height: 
-        deleteObject(image)
-      if int(image.y)<0-int(image.height):
+      elif int(image.y)>root.height-(image.height/2): 
+        makeFullSize(image)
+      elif int(image.y)<0-int(image.height):
         deleteObject(image)
       
     
@@ -111,7 +160,8 @@ def populateLightbox():
         Player.getElementByID("LightBox").appendChild(newImage)
         root=Player.getRootNode()
         print "adding ",fname," - ",origwidth,"x",origheight," scaled down to ",int(newImage.width/imgScale),"x",int(newImage.height/imgScale)
-        animSlideIntoPosition(newImage.id, uniform(0,root.width-newImage.width/imgScale), uniform(0,root.height-newImage.height/imgScale), 500)
+#        animSlideIntoPosition(newImage.id, uniform(0,root.width-newImage.width/imgScale), uniform(0,root.height-newImage.height/imgScale), 500)
+        animSlideIntoPosition(newImage.id, uniform(0,200), uniform(0,root.height-newImage.height/imgScale), 500)
         animBlowUp(newImage.id, imgScale, 500)
         newImage.angle=radians(340)+uniform(0,radians(40))
         imageList.append(newImage)
@@ -134,6 +184,8 @@ Player = avg.Player()
 ##- Player.loadFile('lightbox.avg')
 Player.loadString('''
 <avg width="1280" height="720">
+<div id="PublishStack">
+</div>
 <div id="LightBox">
 </div>
 <image id="TrackerBitmap" sensitive="False"/>
@@ -144,7 +196,6 @@ Player.setOnFrameHandler(onFrame)
 Tracker=Player.addTracker("trackerrc")
 Tracker.setDebugImages(True,True)
 populateLightbox()
-#for img in imageList:
-#    animContDragMotion(img.id, uniform(-150,150), uniform(-150,150))
-Player.setInterval(5000, removeOutsiders)
+Player.setInterval(1000, handleOutsiders)
+Player.showCursor(False)
 Player.play()
