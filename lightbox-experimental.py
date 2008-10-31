@@ -152,9 +152,11 @@ def reorderPublishStack():
             moveToGrid(kid, numKids, total)
 
 def moveToGrid(image, index, total):
+    pass
+'''
 ### this code is completely broken, i feel kind of stupid
     imgsPerRow = int((root.width+(10*total))/image.width)
-    numCols = int(round((total/imgsPerRow)+0.99))
+    numCols = int(total/imgsPerRow)
     col = index/(numCols)
     row = (total) % (index+1)
     print image.id,"grid: ",imgsPerRow,"x",numCols," ind",index," tot",total," col",col," row",row
@@ -162,6 +164,7 @@ def moveToGrid(image, index, total):
     anim.SplineAnim(image, "y", 500, image.y, 0, ((10+image.height)*row), 0, useInt=False)
     anim.SplineAnim(image, "angle", 500, image.angle, 0, radians(358), 0, useInt=False)    
 ###
+'''
 
 def handleOutsiders():
     for image in imageList:
