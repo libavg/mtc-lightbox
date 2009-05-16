@@ -208,7 +208,7 @@ def onFrame():
         Node.height=720
         Node.angle=pi
 
-Player = avg.Player.get()
+Player = avg.Player()
 Player.loadString('''
     <avg width="1280" height="720">
         <div id="PublishStack"></div>
